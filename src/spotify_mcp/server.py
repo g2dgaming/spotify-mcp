@@ -157,9 +157,10 @@ async def handle_call_tool(
                         logger.info(f"Starting playback with arguments: {arguments}")
                         result=spotify_client.start_playback(spotify_uri=arguments.get("spotify_uri"))
                         logger.info("Playback started successfully")
+                        text = f"Playback starting.\nResult: {result}"
                         return [types.TextContent(
                             type="text",
-                            text="Playback starting.\n"+result
+                            text=text
                         )]
                     case "pause":
                         logger.info("Attempting to pause playback")
