@@ -61,7 +61,7 @@ class Client:
         """
         if self.username is None:
             self.set_username()
-        results = self.sp.search(q=query, limit=limit, type=qtype)
+        results = self.sp.search(q=query, limit=limit, type=qtype,market="IN")
         if not results:
             raise ValueError("No search results found.")
         return utils.parse_search_results(results, qtype, self.username)
