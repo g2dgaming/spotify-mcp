@@ -263,7 +263,7 @@ async def handle_call_tool(
 
                         try:
                             # Add the track to queue
-                            spotify_client.add_to_queue(track_id, arguments.get("device"))
+                            spotify_client.add_to_queue(track_id)
 
                             # Get track details to confirm what was added
                             track_info = spotify_client.get_info(f"spotify:track:{track_id}")
