@@ -187,9 +187,9 @@ async def handle_call_tool(
                     limit=arguments.get("limit", 10)
                 )
                 logger.info("Search completed successfully.")
-                return [types.TextContent(
-                    type="text",
-                    text=json.dumps(search_results, indent=2)
+                return [types.JsonContent(
+                    type="json",
+                    json=search_results
                 )]
 
             case "Queue":
