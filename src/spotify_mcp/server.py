@@ -139,13 +139,10 @@ def create_error_response(message):
         text=json.dumps(error_response, indent=2)
     )]
 
-def format_playback_response(spotify_uri: str, curr_info: dict) -> str:
-    if not curr_info:
-        return f"Playback for URI `{spotify_uri}` started, but no details could be fetched."
-
+def format_playback_response(spotify_uri: str) -> str:
+    curr_info = spotify_client.get_info(item_uri=spotify_uri)
     uri_parts = spotify_uri.split(":")
     uri_type = uri_parts[1] if len(uri_parts) == 3 else "unknown"
-
     if uri_type == "track":
         title = curr_info.get("name", "Unknown Track")
         artist = curr_info.get("artist", "N/A")
@@ -222,8 +219,7 @@ async def handle_call_tool(
                         logger.info("Playback started successfully")
 
                         # Get current track details after starting playback
-                        curr_track = spotify_client.get_current_track()
-                        text = format_playback_response(spotify_uri, curr_track)
+                        text = format_playback_response(spotify_uri)
                         return [types.TextContent(
                             type="text",
                             text=text
