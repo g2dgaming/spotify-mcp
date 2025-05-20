@@ -148,14 +148,14 @@ def format_playback_response(spotify_uri: str, curr_info: dict) -> str:
 
     if uri_type == "track":
         title = curr_info.get("name", "Unknown Track")
-        artists = ", ".join(curr_info.get("artists", []))
-        return f"▶️ Now playing: \"{title}\" by {artists}\nURI: {spotify_uri}"
+        artist = curr_info.get("artist", "N/A")
+        return f"▶️ Now playing: \"{title}\" by {artist}\nURI: {spotify_uri}"
 
     elif uri_type == "album":
         album = curr_info.get("name", "Unknown Album")
-        artists = ", ".join(curr_info.get("artists", []))
+        artist = curr_info.get("artist", "N/A")
         total = curr_info.get("total_tracks", "N/A")
-        return f"💿 Playing album: \"{album}\" by {artists}\nTracks: {total}\nURI: {spotify_uri}"
+        return f"💿 Playing album: \"{album}\" by {artist}\nTracks: {total}\nURI: {spotify_uri}"
 
     elif uri_type == "playlist":
         name = curr_info.get("name", "Unknown Playlist")
