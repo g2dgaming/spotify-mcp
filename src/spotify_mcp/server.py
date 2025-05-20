@@ -254,7 +254,7 @@ async def handle_call_tool(
 
                         elif qtype == "album":
                             title = item.get("name", "Unknown Album")
-                            artists = ", ".join(item.get("artists", []))
+                            artists = ", ".join(item.get("artist", "N/A"))
                             uri = f"spotify:album:{item.get('id', 'N/A')}"
                             formatted_results.append(f"{idx}. 💿 \"{title}\" by {artists}\n   URI: {uri}")
 
