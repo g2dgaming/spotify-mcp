@@ -200,17 +200,28 @@ async def handle_call_tool(
                     case "add":
                         track_id = arguments.get("track_id")
                         if not track_id:
-                            logger.error("track_id is required for add to queue.")
                             return [types.TextContent(
                                 type="text",
-                                text="track_id is required for add action"
+                                text="track_id is required for the 'add' action."
                             )]
-                        spotify_client.add_to_queue(track_id)
-                        return [types.TextContent(
-                            type="text",
-                            text=f"Track added to queue."
-                        )]
 
+                        if not spotify_client.is_valid_track(track_id):
+                            return [types.TextContent(
+                                type="text",
+                                text="Invalid or non-existent track ID. Please try another track."
+                            )]
+
+                        try:
+                            spotify_client.add_to_queue(track_id, arguments.get("device"))
+                            return [types.TextContent(
+                                type="text",
+                                text="Track added to queue successfully."
+                            )]
+                        except Exception as e:
+                            return [types.TextContent(
+                                type="text",
+                                text=f"Error adding track to queue: {str(e)}"
+                            )]
                     case "get":
                         queue = spotify_client.get_queue()
                         return [types.TextContent(

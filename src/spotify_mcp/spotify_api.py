@@ -75,6 +75,13 @@ class Client:
         recs = self.sp.recommendations(seed_artists=artists, seed_tracks=tracks, limit=limit)
         return recs
 
+    def is_valid_track(self, track_id: str) -> bool:
+        try:
+            self.sp.track(track_id)
+            return True
+        except spotipy.SpotifyException:
+            return False
+
     def get_info(self, item_uri: str) -> dict:
         """
         Returns more info about item.
