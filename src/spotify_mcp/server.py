@@ -226,7 +226,7 @@ async def handle_call_tool(
                         qtype=arguments.get("qtype", "track"),
                         limit=arguments.get("limit", 10)
                     )
-
+                    logger.info(f"Search results: {search_results}")
                     tracks = search_results.get("tracks", [])
                     if not tracks:
                         return create_error_response("No tracks found for your query.")
