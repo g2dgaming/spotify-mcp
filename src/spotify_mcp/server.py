@@ -180,17 +180,40 @@ async def handle_call_tool(
                         )]
 
             case "Search":
-                logger.info(f"Performing search with arguments: {arguments}")
-                search_results = spotify_client.search(
-                    query=arguments.get("query", ""),
-                    qtype=arguments.get("qtype", "track"),
-                    limit=arguments.get("limit", 10)
-                )
-                logger.info("Search completed successfully.")
-                return [types.TextContent(
-                    type="text",
-                    text=f"```json\n{json.dumps(search_results, indent=2)}\n```"
-                )]
+                try:
+                    logger.info(f"Performing search with arguments: {arguments}")
+                    search_results = spotify_client.search(
+                        query=arguments.get("query", ""),
+                        qtype=arguments.get("qtype", "track"),
+                        limit=arguments.get("limit", 10)
+                    )
+
+                    tracks = search_results.get("tracks", {}).get("items", [])
+                    if not tracks:
+                        return [types.TextContent(
+                            type="text",
+                            text="No tracks found for your query."
+                        )]
+
+                    formatted_results = ["🎵 Search Results:"]
+                    for idx, track in enumerate(tracks, start=1):
+                        title = track.get("name", "Unknown Title")
+                        artists = ", ".join(artist.get("name", "Unknown Artist") for artist in track.get("artists", []))
+                        uri = track.get("uri", "N/A")
+
+                        formatted_results.append(f"{idx}. \"{title}\" by {artists}\n   URI: {uri}")
+
+                    return [types.TextContent(
+                        type="text",
+                        text="\n".join(formatted_results)
+                    )]
+
+                except Exception as e:
+                    logger.error(f"Search failed: {e}")
+                    return [types.TextContent(
+                        type="text",
+                        text="An error occurred during search. Please try again."
+                    )]
 
             case "Queue":
                 logger.info(f"Queue operation with arguments: {arguments}")
