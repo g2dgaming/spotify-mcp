@@ -155,13 +155,41 @@ async def handle_call_tool(
                         )]
                     case "start":
                         logger.info(f"Starting playback with arguments: {arguments}")
-                        result=spotify_client.start_playback(spotify_uri=arguments.get("spotify_uri"))
+                        spotify_uri = arguments.get("spotify_uri")
+
+                        # If URI is provided, validate it before attempting to play
+                        if spotify_uri:
+                            # Extract track ID from URI if it's a track URI
+                            track_id = None
+                            if spotify_uri.startswith("spotify:track:"):
+                                track_id = spotify_uri.split(":")[-1]
+
+                            # Validate the track if we have a track ID
+                            if track_id and not spotify_client.is_valid_track(track_id):
+                                return [types.ErrorContent(
+                                    type="error",
+                                    text="Invalid or non-existent track URI. Please try another track."
+                                )]
+
+                        result = spotify_client.start_playback(spotify_uri=spotify_uri)
                         logger.info("Playback started successfully")
-                        text = f"Playback for uri {arguments.get('spotify_uri')} successfully started."
-                        return [types.TextContent(
-                            type="text",
-                            text=text
-                        )]
+
+                        # Get current track details after starting playback
+                        curr_track = spotify_client.get_current_track()
+                        if curr_track:
+                            track_info = {
+                                "status": "Playback successfully started",
+                                "track_details": curr_track
+                            }
+                            return [types.TextContent(
+                                type="text",
+                                text=json.dumps(track_info, indent=2)
+                            )]
+                        else:
+                            return [types.TextContent(
+                                type="text",
+                                text=f"Playback for uri {spotify_uri} successfully started, but track details could not be retrieved."
+                            )]
                     case "pause":
                         logger.info("Attempting to pause playback")
                         spotify_client.pause_playback()
@@ -190,8 +218,8 @@ async def handle_call_tool(
 
                     tracks = search_results.get("tracks", [])
                     if not tracks:
-                        return [types.TextContent(
-                            type="text",
+                        return [types.ErrorContent(
+                            type="error",
                             text="No tracks found for your query."
                         )]
 
@@ -210,9 +238,9 @@ async def handle_call_tool(
 
                 except Exception as e:
                     logger.error(f"Search failed: {e}")
-                    return [types.TextContent(
-                        type="text",
-                        text="An error occurred during search. Please try again."
+                    return [types.ErrorContent(
+                        type="error",
+                        text=f"An error occurred during search: {str(e)}"
                     )]
 
             case "Queue":
@@ -223,26 +251,35 @@ async def handle_call_tool(
                     case "add":
                         track_id = arguments.get("track_id")
                         if not track_id:
-                            return [types.TextContent(
-                                type="text",
+                            return [types.ErrorContent(
+                                type="error",
                                 text="track_id is required for the 'add' action."
                             )]
 
                         if not spotify_client.is_valid_track(track_id):
-                            return [types.TextContent(
-                                type="text",
+                            return [types.ErrorContent(
+                                type="error",
                                 text="Invalid or non-existent track ID. Please try another track."
                             )]
 
                         try:
+                            # Add the track to queue
                             spotify_client.add_to_queue(track_id, arguments.get("device"))
+
+                            # Get track details to confirm what was added
+                            track_info = spotify_client.get_info(f"spotify:track:{track_id}")
+                            response_data = {
+                                "status": "Track added to queue successfully",
+                                "track_details": track_info
+                            }
+
                             return [types.TextContent(
                                 type="text",
-                                text="Track added to queue successfully."
+                                text=json.dumps(response_data, indent=2)
                             )]
                         except Exception as e:
-                            return [types.TextContent(
-                                type="text",
+                            return [types.ErrorContent(
+                                type="error",
                                 text=f"Error adding track to queue: {str(e)}"
                             )]
                     case "get":
@@ -253,8 +290,8 @@ async def handle_call_tool(
                         )]
 
                     case _:
-                        return [types.TextContent(
-                            type="text",
+                        return [types.ErrorContent(
+                            type="error",
                             text=f"Unknown queue action: {action}. Supported actions are: add, remove, and get."
                         )]
 
@@ -283,8 +320,8 @@ async def handle_call_tool(
                         logger.info(f"Getting tracks in playlist with arguments: {arguments}")
                         if not arguments.get("playlist_id"):
                             logger.error("playlist_id is required for get_tracks action.")
-                            return [types.TextContent(
-                                type="text",
+                            return [types.ErrorContent(
+                                type="error",
                                 text="playlist_id is required for get_tracks action."
                             )]
                         tracks = spotify_client.get_playlist_tracks(arguments.get("playlist_id"))
@@ -300,8 +337,8 @@ async def handle_call_tool(
                                 track_ids = json.loads(track_ids)  # Convert JSON string to Python list
                             except json.JSONDecodeError:
                                 logger.error("track_ids must be a list or a valid JSON array.")
-                                return [types.TextContent(
-                                    type="text",
+                                return [types.ErrorContent(
+                                    type="error",
                                     text="Error: track_ids must be a list or a valid JSON array."
                                 )]
 
@@ -321,8 +358,8 @@ async def handle_call_tool(
                                 track_ids = json.loads(track_ids)  # Convert JSON string to Python list
                             except json.JSONDecodeError:
                                 logger.error("track_ids must be a list or a valid JSON array.")
-                                return [types.TextContent(
-                                    type="text",
+                                return [types.ErrorContent(
+                                    type="error",
                                     text="Error: track_ids must be a list or a valid JSON array."
                                 )]
 
@@ -339,14 +376,14 @@ async def handle_call_tool(
                         logger.info(f"Changing playlist details with arguments: {arguments}")
                         if not arguments.get("playlist_id"):
                             logger.error("playlist_id is required for change_details action.")
-                            return [types.TextContent(
-                                type="text",
+                            return [types.ErrorContent(
+                                type="error",
                                 text="playlist_id is required for change_details action."
                             )]
                         if not arguments.get("name") and not arguments.get("description"):
                             logger.error("At least one of name, description or public is required.")
-                            return [types.TextContent(
-                                type="text",
+                            return [types.ErrorContent(
+                                type="error",
                                 text="At least one of name, description, public, or collaborative is required."
                             )]
 
@@ -361,30 +398,30 @@ async def handle_call_tool(
                         )]
 
                     case _:
-                        return [types.TextContent(
-                            type="text",
-                            text=f"Unknown playlist action: {action}."
+                        return [types.ErrorContent(
+                            type="error",
+                            text=f"Unknown playlist action: {action}. "
                                  "Supported actions are: get, get_tracks, add_tracks, remove_tracks, change_details."
                         )]
             case _:
                 error_msg = f"Unknown tool: {name}"
                 logger.error(error_msg)
-                return [types.TextContent(
-                    type="text",
+                return [types.ErrorContent(
+                    type="error",
                     text=error_msg
                 )]
     except SpotifyException as se:
         error_msg = f"Spotify Client error occurred: {str(se)}"
         logger.error(error_msg)
-        return [types.TextContent(
-            type="text",
+        return [types.ErrorContent(
+            type="error",
             text=f"An error occurred with the Spotify Client: {str(se)}"
         )]
     except Exception as e:
         error_msg = f"Unexpected error occurred: {str(e)}"
         logger.error(error_msg)
-        return [types.TextContent(
-            type="text",
+        return [types.ErrorContent(
+            type="error",
             text=error_msg
         )]
 
