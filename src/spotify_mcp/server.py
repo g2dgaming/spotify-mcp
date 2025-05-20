@@ -139,6 +139,42 @@ def create_error_response(message):
         text=json.dumps(error_response, indent=2)
     )]
 
+def format_playback_response(spotify_uri: str, curr_info: dict) -> str:
+    if not curr_info:
+        return f"Playback for URI `{spotify_uri}` started, but no details could be fetched."
+
+    uri_parts = spotify_uri.split(":")
+    uri_type = uri_parts[1] if len(uri_parts) == 3 else "unknown"
+
+    if uri_type == "track":
+        title = curr_info.get("name", "Unknown Track")
+        artists = ", ".join(curr_info.get("artists", []))
+        return f"▶️ Now playing: \"{title}\" by {artists}\nURI: {spotify_uri}"
+
+    elif uri_type == "album":
+        album = curr_info.get("name", "Unknown Album")
+        artists = ", ".join(curr_info.get("artists", []))
+        total = curr_info.get("total_tracks", "N/A")
+        return f"💿 Playing album: \"{album}\" by {artists}\nTracks: {total}\nURI: {spotify_uri}"
+
+    elif uri_type == "playlist":
+        name = curr_info.get("name", "Unknown Playlist")
+        owner = curr_info.get("owner", "Unknown Owner")
+        total = curr_info.get("total_tracks", "N/A")
+        is_owner = curr_info.get("user_is_owner", False)
+        ownership = "✅ You own this playlist" if is_owner else "👤 Owned by someone else"
+        return (
+            f"📜 Playing playlist: \"{name}\"\n"
+            f"Owner: {owner} | Tracks: {total}\n"
+            f"{ownership}\n"
+            f"URI: {spotify_uri}"
+        )
+
+    elif uri_type == "artist":
+        name = curr_info.get("name", "Unknown Artist")
+        return f"🎤 Playing songs from artist: {name}\nURI: {spotify_uri}"
+
+    return f"▶️ Playback started for URI: {spotify_uri} (type: {uri_type})"
 
 @server.call_tool()
 async def handle_call_tool(
@@ -187,20 +223,12 @@ async def handle_call_tool(
 
                         # Get current track details after starting playback
                         curr_track = spotify_client.get_current_track()
-                        if curr_track:
-                            track_info = {
-                                "status": "Playback successfully started",
-                                "track_details": curr_track
-                            }
-                            return [types.TextContent(
-                                type="text",
-                                text=json.dumps(track_info, indent=2)
-                            )]
-                        else:
-                            return [types.TextContent(
-                                type="text",
-                                text=f"Playback for uri {spotify_uri} successfully started, but track details could not be retrieved."
-                            )]
+                        text = format_playback_response(spotify_uri, curr_track)
+                        return [types.TextContent(
+                            type="text",
+                            text=text
+                        )]
+
                     case "pause":
                         logger.info("Attempting to pause playback")
                         spotify_client.pause_playback()
