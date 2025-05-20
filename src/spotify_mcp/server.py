@@ -221,23 +221,51 @@ async def handle_call_tool(
             case "Search":
                 try:
                     logger.info(f"Performing search with arguments: {arguments}")
+                    query = arguments.get("query", "")
+                    qtype = arguments.get("qtype", "track")
+                    limit = arguments.get("limit", 10)
+
                     search_results = spotify_client.search(
-                        query=arguments.get("query", ""),
-                        qtype=arguments.get("qtype", "track"),
-                        limit=arguments.get("limit", 10)
+                        query=query,
+                        qtype=qtype,
+                        limit=limit
                     )
                     logger.info(f"Search results: {search_results}")
-                    tracks = search_results.get("tracks", [])
-                    if not tracks:
-                        return create_error_response("No tracks found for your query.")
 
-                    formatted_results = ["🎵 Search Results:"]
-                    for idx, track in enumerate(tracks, start=1):
-                        title = track.get("name", "Unknown Title")
-                        artists = ", ".join(track.get("artists", []))
-                        uri = f"spotify:track:{track.get('id', 'N/A')}"
+                    formatted_results = [f"🔍 Search Results for {qtype}s:"]
 
-                        formatted_results.append(f"{idx}. \"{title}\" by {artists}\n   URI: {uri}")
+                    # Map qtype to corresponding key in the response
+                    result_items = search_results.get(f"{qtype}s", [])
+
+                    if not result_items:
+                        return create_error_response(f"No {qtype}s found for your query.")
+
+                    for idx, item in enumerate(result_items, start=1):
+                        if qtype == "track":
+                            title = item.get("name", "Unknown Title")
+                            artists = ", ".join(item.get("artists", []))
+                            uri = f"spotify:track:{item.get('id', 'N/A')}"
+                            formatted_results.append(f"{idx}. \"{title}\" by {artists}\n   URI: {uri}")
+
+                        elif qtype == "artist":
+                            name = item.get("name", "Unknown Artist")
+                            uri = f"spotify:artist:{item.get('id', 'N/A')}"
+                            formatted_results.append(f"{idx}. 👤 {name}\n   URI: {uri}")
+
+                        elif qtype == "album":
+                            title = item.get("name", "Unknown Album")
+                            artists = ", ".join(item.get("artists", []))
+                            uri = f"spotify:album:{item.get('id', 'N/A')}"
+                            formatted_results.append(f"{idx}. 💿 \"{title}\" by {artists}\n   URI: {uri}")
+
+                        elif qtype == "playlist":
+                            name = item.get("name", "Unknown Playlist")
+                            owner = item.get("owner", "Unknown Owner")
+                            uri = f"spotify:playlist:{item.get('id', 'N/A')}"
+                            formatted_results.append(f"{idx}. 📜 \"{name}\" by {owner}\n   URI: {uri}")
+
+                        else:
+                            formatted_results.append(f"{idx}. Unsupported qtype: {qtype}")
 
                     return [types.TextContent(
                         type="text",
