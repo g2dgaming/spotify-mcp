@@ -254,15 +254,35 @@ async def handle_call_tool(
 
                         elif qtype == "album":
                             title = item.get("name", "Unknown Album")
-                            artists = ", ".join(item.get("artist", "N/A"))
+                            artist = item.get("artist", "N/A")
                             uri = f"spotify:album:{item.get('id', 'N/A')}"
-                            formatted_results.append(f"{idx}. 💿 \"{title}\" by {artists}\n   URI: {uri}")
+                            formatted_results.append(f"{idx}. 💿 \"{title}\" by {artist}\n   URI: {uri}")
 
                         elif qtype == "playlist":
+
                             name = item.get("name", "Unknown Playlist")
+
                             owner = item.get("owner", "Unknown Owner")
+
+                            is_owner = item.get("user_is_owner", False)
+
+                            total_tracks = item.get("total_tracks", "N/A")
+
                             uri = f"spotify:playlist:{item.get('id', 'N/A')}"
-                            formatted_results.append(f"{idx}. 📜 \"{name}\" by {owner}\n   URI: {uri}")
+
+                            ownership_text = "✅ You own this playlist" if is_owner else "👤 Owned by someone else"
+
+                            formatted_results.append(
+
+                                f"{idx}. 📜 \"{name}\"\n"
+
+                                f"   Owner: {owner} | Tracks: {total_tracks}\n"
+
+                                f"   {ownership_text}\n"
+
+                                f"   URI: {uri}"
+
+                            )
 
                         else:
                             formatted_results.append(f"{idx}. Unsupported qtype: {qtype}")
