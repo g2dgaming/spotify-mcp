@@ -256,17 +256,6 @@ async def handle_call_tool(
                     case "add":
                         track_id = arguments.get("track_id")
                         if not track_id:
-                            logger.error("track_id is required for add to queue.")
-                            return [types.TextContent(
-                                type="text",
-                                text="track_id is required for add action"
-                            )]
-                        spotify_client.add_to_queue(track_id)
-                        return [types.TextContent(
-                            type="text",
-                            text=f"Track added to queue."
-                        )]
-                        if not track_id:
                             return create_error_response("track_id is required for the 'add' action.")
 
                         if not spotify_client.is_valid_track(track_id):
@@ -277,7 +266,7 @@ async def handle_call_tool(
                             spotify_client.add_to_queue(track_id)
 
                             # Get track details to confirm what was added
-                            track_info = spotify_client.get_info(f"spotify:track:{track_id}")
+                            track_info = spotify_client.get_info(item_uri=track_id)
                             response_data = {
                                 "status": "Track added to queue successfully",
                                 "track_details": track_info
