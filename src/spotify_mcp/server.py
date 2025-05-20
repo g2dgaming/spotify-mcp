@@ -188,7 +188,7 @@ async def handle_call_tool(
                         limit=arguments.get("limit", 10)
                     )
 
-                    tracks = search_results.get("tracks", {}).get("items", [])
+                    tracks = search_results.get("tracks", [])
                     if not tracks:
                         return [types.TextContent(
                             type="text",
@@ -198,8 +198,8 @@ async def handle_call_tool(
                     formatted_results = ["🎵 Search Results:"]
                     for idx, track in enumerate(tracks, start=1):
                         title = track.get("name", "Unknown Title")
-                        artists = ", ".join(artist.get("name", "Unknown Artist") for artist in track.get("artists", []))
-                        uri = track.get("uri", "N/A")
+                        artists = ", ".join(track.get("artists", []))
+                        uri = f"spotify:track:{track.get('id', 'N/A')}"
 
                         formatted_results.append(f"{idx}. \"{title}\" by {artists}\n   URI: {uri}")
 
