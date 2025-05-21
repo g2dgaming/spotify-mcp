@@ -146,15 +146,12 @@ def format_playback_response(spotify_uri: str) -> str:
     uri_type = uri_parts[1] if len(uri_parts) == 3 else "unknown"
     if uri_type == "track":
         title = curr_info.get("name", "Unknown Track")
-        artists = curr_info.get("artists")
-        artist_str = ", ".join(artists) if artists else ""
-        return f"▶️ Now playing: \"{title}\" by {artist_str}\nURI: {spotify_uri}"
+        return f"▶️ Now playing: \"{title}\" by {get_artist_string(curr_info)}\nURI: {spotify_uri}"
 
     elif uri_type == "album":
         album = curr_info.get("name", "Unknown Album")
-        artist = curr_info.get("artist")
         total = curr_info.get("total_tracks", "N/A")
-        return f"💿 Playing album: \"{album}\" by {artist}\nTracks: {total}\nURI: {spotify_uri}"
+        return f"💿 Playing album: \"{album}\" by {get_artist_string(curr_info)}\nTracks: {total}\nURI: {spotify_uri}"
 
     elif uri_type == "playlist":
         name = curr_info.get("name", "Unknown Playlist")
@@ -269,9 +266,8 @@ async def handle_call_tool(
                     for idx, item in enumerate(result_items, start=1):
                         if qtype == "track":
                             title = item.get("name", "Unknown Title")
-                            artists = ", ".join(item.get("artists", []))
                             uri = f"spotify:track:{item.get('id', 'N/A')}"
-                            formatted_results.append(f"{idx}. \"{title}\" by {artists}\n   URI: {uri}")
+                            formatted_results.append(f"{idx}. \"{title}\" by {get_artist_string(item)}\n   URI: {uri}")
 
                         elif qtype == "artist":
                             name = item.get("name", "Unknown Artist")
@@ -280,9 +276,8 @@ async def handle_call_tool(
 
                         elif qtype == "album":
                             title = item.get("name", "Unknown Album")
-                            artist = item.get("artist", "N/A")
                             uri = f"spotify:album:{item.get('id', 'N/A')}"
-                            formatted_results.append(f"{idx}. 💿 \"{title}\" by {artist}\n   URI: {uri}")
+                            formatted_results.append(f"{idx}. 💿 \"{title}\" by {get_artist_string(item)}\n   URI: {uri}")
 
                         elif qtype == "playlist":
 
@@ -540,6 +535,27 @@ async def handle_call_tool(
         error_msg = f"Unexpected error occurred: {str(e)}"
         logger.error(error_msg)
         return create_error_response(error_msg)
+
+def get_artist_string(item):
+    """
+    Extracts artist information from a dictionary that may contain either:
+    - 'artist': a single string
+    - 'artists': a list of strings
+
+    Returns:
+        A comma-separated string of artist names.
+    """
+    artists = item.get("artists")
+    artist = item.get("artist")
+
+    if isinstance(artists, list):
+        all_artists = artists
+    elif isinstance(artist, str):
+        all_artists = [artist]
+    else:
+        all_artists = []
+
+    return ", ".join(all_artists)
 
 
 async def main():
