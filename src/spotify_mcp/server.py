@@ -423,6 +423,7 @@ async def handle_call_tool(
                                 text=json.dumps(response_data, indent=2)
                             )]
                         except Exception as e:
+                            logger.error(e)
                             return create_error_response(f"Error adding to queue: {str(e)}")
 
                     case "get":
