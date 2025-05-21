@@ -150,7 +150,7 @@ def format_playback_response(spotify_uri: str) -> str:
 
     elif uri_type == "album":
         album = curr_info.get("name", "Unknown Album")
-        artist = curr_info.get("artist", "N/A")
+        artist = curr_info.get("artist")
         total = curr_info.get("total_tracks", "N/A")
         return f"💿 Playing album: \"{album}\" by {artist}\nTracks: {total}\nURI: {spotify_uri}"
 
@@ -338,7 +338,7 @@ async def handle_call_tool(
                             spotify_client.add_to_queue(track_id)
 
                             # Get track details to confirm what was added
-                            track_info = spotify_client.get_info(item_uri=track_id)
+                            track_info = spotify_client.get_info(item_uri=f"spotify:track:{track_id}")
                             response_data = {
                                 "status": "Track added to queue successfully",
                                 "track_details": track_info
