@@ -355,7 +355,8 @@ async def handle_call_tool(
 
                                 # Get all tracks from playlist
                                 playlist_tracks = spotify_client.get_playlist_tracks(spotify_uri)
-
+                                logger.info(playlist_tracks)
+                                logger.info(spotify_uri)
                                 # Add each track to queue
                                 added_tracks = []
                                 for track in playlist_tracks:
