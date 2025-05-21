@@ -355,12 +355,10 @@ async def handle_call_tool(
 
                                 # Get all tracks from playlist
                                 playlist_tracks = spotify_client.get_playlist_tracks(spotify_uri)
-                                logger.info(playlist_tracks)
-                                logger.info(spotify_uri)
                                 # Add each track to queue
                                 added_tracks = []
                                 for track in playlist_tracks:
-                                    track_uri = track.get("uri")
+                                    track_uri = track.get("id")
                                     spotify_client.add_to_queue(track_uri)
                                     added_tracks.append(track)
 
@@ -382,7 +380,7 @@ async def handle_call_tool(
                                 # Add each track to queue
                                 added_tracks = []
                                 for track in album_tracks:
-                                    track_uri = track.get("uri")
+                                    track_uri = track.get("id")
                                     spotify_client.add_to_queue(track_uri)
                                     added_tracks.append(track)
 
@@ -404,7 +402,7 @@ async def handle_call_tool(
                                 # Add each track to queue
                                 added_tracks = []
                                 for track in artist_tracks:
-                                    track_uri = track.get("uri")
+                                    track_uri = track.get("id")
                                     spotify_client.add_to_queue(track_uri)
                                     added_tracks.append(track)
 
