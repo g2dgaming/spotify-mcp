@@ -146,8 +146,9 @@ def format_playback_response(spotify_uri: str) -> str:
     uri_type = uri_parts[1] if len(uri_parts) == 3 else "unknown"
     if uri_type == "track":
         title = curr_info.get("name", "Unknown Track")
-        artist = curr_info.get("artist", "N/A")
-        return f"▶️ Now playing: \"{title}\" by {artist}\nURI: {spotify_uri}"
+        artists = curr_info.get("artists")
+        artist_str = ", ".join(artists) if artists else ""
+        return f"▶️ Now playing: \"{title}\" by {artist_str}\nURI: {spotify_uri}"
 
     elif uri_type == "album":
         album = curr_info.get("name", "Unknown Album")
