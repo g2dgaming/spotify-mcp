@@ -64,7 +64,7 @@ class Playback(ToolModel):
 
 
 class Queue(ToolModel):
-    """Manage the playback queue - get the queue or add tracks."""
+    """Manage the playback queue - get the queue or add playlists/tracks/artists/album to queue."""
     action: str = Field(description="Action to perform: 'add' or 'get'.")
     spotify_uri: Optional[str] = Field(default=None, description="Spotify resource uri to add to queue (required for add action)")
 
