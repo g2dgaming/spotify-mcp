@@ -66,7 +66,7 @@ class Playback(ToolModel):
 class Queue(ToolModel):
     """Manage the playback queue - get the queue or add tracks."""
     action: str = Field(description="Action to perform: 'add' or 'get'.")
-    track_id: Optional[str] = Field(default=None, description="Track ID to add to queue (required for add action)")
+    spotify_uri: Optional[str] = Field(default=None, description="Spotify resource uri to add to queue (required for add action)")
 
 
 class GetInfo(ToolModel):
@@ -326,30 +326,105 @@ async def handle_call_tool(
 
                 match action:
                     case "add":
-                        track_id = arguments.get("track_id")
-                        if not track_id:
-                            return create_error_response("track_id is required for the 'add' action.")
-
-                        if not spotify_client.is_valid_track(track_id):
-                            return create_error_response("Invalid or non-existent track ID. Please try another track.")
+                        spotify_uri = arguments.get("spotify_uri")
+                        if not spotify_uri:
+                            return create_error_response("spotify_uri is required for the 'add' action.")
 
                         try:
-                            # Add the track to queue
-                            spotify_client.add_to_queue(track_id)
+                            # Determine the type of resource (track, album, playlist, artist)
+                            if "track" in spotify_uri:
+                                # Handle single track
+                                if not spotify_client.is_valid_track(spotify_uri):
+                                    return create_error_response(
+                                        "Invalid or non-existent track URI. Please try another track.")
 
-                            # Get track details to confirm what was added
-                            track_info = spotify_client.get_info(item_uri=f"spotify:track:{track_id}")
-                            response_data = {
-                                "status": "Track added to queue successfully",
-                                "track_details": track_info
-                            }
+                                # Add the track to queue
+                                spotify_client.add_to_queue(spotify_uri)
+
+                                # Get track details to confirm what was added
+                                track_info = spotify_client.get_info(item_uri=spotify_uri)
+                                response_data = {
+                                    "status": "Track added to queue successfully",
+                                    "track_details": track_info
+                                }
+
+                            elif "playlist" in spotify_uri:
+                                # Handle playlist
+                                if not spotify_client.is_valid_playlist(spotify_uri):
+                                    return create_error_response("Invalid or non-existent playlist URI.")
+
+                                # Get all tracks from playlist
+                                playlist_tracks = spotify_client.get_playlist_tracks(spotify_uri)
+
+                                # Add each track to queue
+                                added_tracks = []
+                                for track in playlist_tracks:
+                                    track_uri = track.get("uri")
+                                    spotify_client.add_to_queue(track_uri)
+                                    added_tracks.append(track)
+
+                                playlist_info = spotify_client.get_info(item_uri=spotify_uri)
+                                response_data = {
+                                    "status": f"All {len(added_tracks)} tracks from playlist added to queue successfully",
+                                    "playlist_details": playlist_info,
+                                    "tracks_added": len(added_tracks)
+                                }
+
+                            elif "album" in spotify_uri:
+                                # Handle album
+                                if not spotify_client.is_valid_album(spotify_uri):
+                                    return create_error_response("Invalid or non-existent album URI.")
+
+                                # Get all tracks from album
+                                album_tracks = spotify_client.get_album_tracks(spotify_uri)
+
+                                # Add each track to queue
+                                added_tracks = []
+                                for track in album_tracks:
+                                    track_uri = track.get("uri")
+                                    spotify_client.add_to_queue(track_uri)
+                                    added_tracks.append(track)
+
+                                album_info = spotify_client.get_info(item_uri=spotify_uri)
+                                response_data = {
+                                    "status": f"All {len(added_tracks)} tracks from album added to queue successfully",
+                                    "album_details": album_info,
+                                    "tracks_added": len(added_tracks)
+                                }
+
+                            elif "artist" in spotify_uri:
+                                # Handle artist
+                                if not spotify_client.is_valid_artist(spotify_uri):
+                                    return create_error_response("Invalid or non-existent artist URI.")
+
+                                # Get top tracks from artist
+                                artist_tracks = spotify_client.get_artist_top_tracks(spotify_uri)
+
+                                # Add each track to queue
+                                added_tracks = []
+                                for track in artist_tracks:
+                                    track_uri = track.get("uri")
+                                    spotify_client.add_to_queue(track_uri)
+                                    added_tracks.append(track)
+
+                                artist_info = spotify_client.get_info(item_uri=spotify_uri)
+                                response_data = {
+                                    "status": f"Top {len(added_tracks)} tracks from artist added to queue successfully",
+                                    "artist_details": artist_info,
+                                    "tracks_added": len(added_tracks)
+                                }
+
+                            else:
+                                return create_error_response(
+                                    "Unsupported URI type. Please provide a track, playlist, album, or artist URI.")
 
                             return [types.TextContent(
                                 type="text",
                                 text=json.dumps(response_data, indent=2)
                             )]
                         except Exception as e:
-                            return create_error_response(f"Error adding track to queue: {str(e)}")
+                            return create_error_response(f"Error adding to queue: {str(e)}")
+
                     case "get":
                         queue = spotify_client.get_queue()
                         return [types.TextContent(
@@ -359,8 +434,7 @@ async def handle_call_tool(
 
                     case _:
                         return create_error_response(
-                            f"Unknown queue action: {action}. Supported actions are: add, remove, and get.")
-
+                            f"Unknown queue action: {action}. Supported actions are: add and get.")
             case "GetInfo":
                 logger.info(f"Getting item info with arguments: {arguments}")
                 item_info = spotify_client.get_info(

@@ -54,6 +54,220 @@ class Client:
     def set_username(self, device=None):
         self.username = self.sp.current_user()['display_name']
 
+    def is_valid_track(self, spotify_uri):
+        """Validates if a given URI is a valid track in Spotify."""
+        try:
+            track_id = self._extract_id_from_uri(spotify_uri)
+            self._sp.track(track_id)
+            return True
+        except Exception:
+            return False
+
+    def is_valid_playlist(self, spotify_uri):
+        """Validates if a given URI is a valid playlist in Spotify."""
+        try:
+            playlist_id = self._extract_id_from_uri(spotify_uri)
+            self._sp.playlist(playlist_id)
+            return True
+        except Exception:
+            return False
+
+    def is_valid_album(self, spotify_uri):
+        """Validates if a given URI is a valid album in Spotify."""
+        try:
+            album_id = self._extract_id_from_uri(spotify_uri)
+            self._sp.album(album_id)
+            return True
+        except Exception:
+            return False
+
+    def is_valid_artist(self, spotify_uri):
+        """Validates if a given URI is a valid artist in Spotify."""
+        try:
+            artist_id = self._extract_id_from_uri(spotify_uri)
+            self._sp.artist(artist_id)
+            return True
+        except Exception:
+            return False
+
+    def get_playlist_tracks(self, playlist_uri):
+        """Gets all tracks from a playlist."""
+        playlist_id = self._extract_id_from_uri(playlist_uri)
+        results = self._sp.playlist_items(playlist_id)
+
+        tracks = []
+        while results:
+            for item in results['items']:
+                # Some playlist items might be None or not have track info
+                if item and 'track' in item and item['track']:
+                    track = item['track']
+                    track_data = {
+                        'uri': track['uri'],
+                        'name': track['name'],
+                        'artists': [artist['name'] for artist in track['artists']],
+                        'duration_ms': track['duration_ms'],
+                        'album': track['album']['name'] if 'album' in track else None
+                    }
+                    tracks.append(track_data)
+
+            # Get next page of results if available
+            if results['next']:
+                results = self._sp.next(results)
+            else:
+                results = None
+
+        return tracks
+
+    def get_album_tracks(self, album_uri):
+        """Gets all tracks from an album."""
+        album_id = self._extract_id_from_uri(album_uri)
+        results = self._sp.album_tracks(album_id)
+
+        tracks = []
+        while results:
+            for track in results['items']:
+                track_data = {
+                    'uri': track['uri'],
+                    'name': track['name'],
+                    'artists': [artist['name'] for artist in track['artists']],
+                    'duration_ms': track['duration_ms'],
+                    'track_number': track['track_number']
+                }
+                tracks.append(track_data)
+
+            # Get next page of results if available
+            if results['next']:
+                results = self._sp.next(results)
+            else:
+                results = None
+
+        return tracks
+
+    def get_artist_top_tracks(self, artist_uri):
+        """Gets top tracks from an artist."""
+        artist_id = self._extract_id_from_uri(artist_uri)
+        # Get market from user's account or default to US
+        try:
+            user_info = self._sp.current_user()
+            market = user_info['country']
+        except:
+            market = 'US'
+
+        results = self._sp.artist_top_tracks(artist_id, country=market)
+
+        tracks = []
+        for track in results['tracks']:
+            track_data = {
+                'uri': track['uri'],
+                'name': track['name'],
+                'artists': [artist['name'] for artist in track['artists']],
+                'duration_ms': track['duration_ms'],
+                'album': track['album']['name'] if 'album' in track else None,
+                'popularity': track['popularity']
+            }
+            tracks.append(track_data)
+
+        return tracks
+
+    def add_to_queue(self, spotify_uri):
+        """Adds a track to the queue."""
+        # The Spotify API endpoint expects a device_id parameter, but it's optional
+        # if the user has an active device
+        try:
+            self._sp.add_to_queue(spotify_uri)
+            return True
+        except Exception as e:
+            # If no active device is found, try to get one and retry
+            devices = self._sp.devices()
+            if devices and len(devices['devices']) > 0:
+                device_id = devices['devices'][0]['id']
+                self._sp.add_to_queue(spotify_uri, device_id=device_id)
+                return True
+            else:
+                raise Exception("No active Spotify device found. Please open Spotify on a device first.")
+
+    def get_queue(self):
+        """Gets the current user's queue."""
+        try:
+            queue = self._sp.queue()
+            return queue
+        except Exception as e:
+            raise Exception(f"Could not retrieve queue: {str(e)}")
+
+    def get_info(self, item_uri):
+        """Gets detailed information about a Spotify item based on its URI."""
+        item_id = self._extract_id_from_uri(item_uri)
+
+        if 'track' in item_uri:
+            item = self._sp.track(item_id)
+            info = {
+                'type': 'track',
+                'name': item['name'],
+                'artists': [artist['name'] for artist in item['artists']],
+                'album': item['album']['name'],
+                'duration_ms': item['duration_ms'],
+                'popularity': item['popularity'],
+                'uri': item['uri'],
+                'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
+            }
+        elif 'playlist' in item_uri:
+            item = self._sp.playlist(item_id)
+            info = {
+                'type': 'playlist',
+                'name': item['name'],
+                'owner': item['owner']['display_name'],
+                'description': item['description'],
+                'tracks_total': item['tracks']['total'],
+                'followers': item['followers']['total'],
+                'uri': item['uri'],
+                'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
+            }
+        elif 'album' in item_uri:
+            item = self._sp.album(item_id)
+            info = {
+                'type': 'album',
+                'name': item['name'],
+                'artists': [artist['name'] for artist in item['artists']],
+                'release_date': item['release_date'],
+                'total_tracks': item['total_tracks'],
+                'popularity': item['popularity'],
+                'uri': item['uri'],
+                'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
+            }
+        elif 'artist' in item_uri:
+            item = self._sp.artist(item_id)
+            info = {
+                'type': 'artist',
+                'name': item['name'],
+                'genres': item['genres'],
+                'followers': item['followers']['total'],
+                'popularity': item['popularity'],
+                'uri': item['uri'],
+                'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
+            }
+        else:
+            raise ValueError(f"Unsupported URI type: {item_uri}")
+
+        return info
+
+    def _extract_id_from_uri(self, uri):
+        """Extracts the ID portion from a Spotify URI."""
+        # Handle different URI formats
+        # spotify:type:id
+        # https://open.spotify.com/type/id
+        if uri.startswith('spotify:'):
+            parts = uri.split(':')
+            return parts[-1]
+        elif uri.startswith('http'):
+            # Extract the path and split by '/'
+            from urllib.parse import urlparse
+            path = urlparse(uri).path
+            parts = path.split('/')
+            # The ID should be the last part
+            return parts[-1]
+        else:
+            # Assume it's just the ID
+            return uri
     @utils.validate
     def search(self, query: str, qtype: str = 'track', limit=10, device=None):
         """
@@ -75,48 +289,6 @@ class Client:
         recs = self.sp.recommendations(seed_artists=artists, seed_tracks=tracks, limit=limit)
         return recs
 
-    def is_valid_track(self, track_id: str) -> bool:
-        try:
-            self.sp.track(track_id)
-            return True
-        except spotipy.SpotifyException:
-            return False
-
-    def get_info(self, item_uri: str) -> dict:
-        """
-        Returns more info about item.
-        - item_uri: uri. Looks like 'spotify:track:xxxxxx', 'spotify:album:xxxxxx', etc.
-        """
-        _, qtype, item_id = item_uri.split(":")
-        match qtype:
-            case 'track':
-                return utils.parse_track(self.sp.track(item_id), detailed=True)
-            case 'album':
-                album_info = utils.parse_album(self.sp.album(item_id), detailed=True)
-                return album_info
-            case 'artist':
-                artist_info = utils.parse_artist(self.sp.artist(item_id), detailed=True)
-                albums = self.sp.artist_albums(item_id)
-                top_tracks = self.sp.artist_top_tracks(item_id)['tracks']
-                albums_and_tracks = {
-                    'albums': albums,
-                    'tracks': {'items': top_tracks}
-                }
-                parsed_info = utils.parse_search_results(albums_and_tracks, qtype="album,track")
-                artist_info['top_tracks'] = parsed_info['tracks']
-                artist_info['albums'] = parsed_info['albums']
-
-                return artist_info
-            case 'playlist':
-                if self.username is None:
-                    self.set_username()
-                playlist = self.sp.playlist(item_id)
-                self.logger.info(f"playlist info is {playlist}")
-                playlist_info = utils.parse_playlist(playlist, self.username, detailed=True)
-
-                return playlist_info
-
-        raise ValueError(f"Unknown qtype {qtype}")
 
     def get_current_track(self) -> Optional[Dict]:
         """Get information about the currently playing track"""
