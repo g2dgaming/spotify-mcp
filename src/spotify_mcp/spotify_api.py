@@ -58,7 +58,7 @@ class Client:
         """Validates if a given URI is a valid track in Spotify."""
         try:
             track_id = self._extract_id_from_uri(spotify_uri)
-            self._sp.track(track_id)
+            self.sp.track(track_id)
             return True
         except Exception:
             return False
@@ -67,7 +67,7 @@ class Client:
         """Validates if a given URI is a valid playlist in Spotify."""
         try:
             playlist_id = self._extract_id_from_uri(spotify_uri)
-            self._sp.playlist(playlist_id)
+            self.sp.playlist(playlist_id)
             return True
         except Exception:
             return False
@@ -76,7 +76,7 @@ class Client:
         """Validates if a given URI is a valid album in Spotify."""
         try:
             album_id = self._extract_id_from_uri(spotify_uri)
-            self._sp.album(album_id)
+            self.sp.album(album_id)
             return True
         except Exception:
             return False
@@ -85,7 +85,7 @@ class Client:
         """Validates if a given URI is a valid artist in Spotify."""
         try:
             artist_id = self._extract_id_from_uri(spotify_uri)
-            self._sp.artist(artist_id)
+            self.sp.artist(artist_id)
             return True
         except Exception:
             return False
@@ -93,7 +93,7 @@ class Client:
     def get_playlist_tracks(self, playlist_uri):
         """Gets all tracks from a playlist."""
         playlist_id = self._extract_id_from_uri(playlist_uri)
-        results = self._sp.playlist_items(playlist_id)
+        results = self.sp.playlist_items(playlist_id)
 
         tracks = []
         while results:
@@ -112,7 +112,7 @@ class Client:
 
             # Get next page of results if available
             if results['next']:
-                results = self._sp.next(results)
+                results = self.sp.next(results)
             else:
                 results = None
 
@@ -121,7 +121,7 @@ class Client:
     def get_album_tracks(self, album_uri):
         """Gets all tracks from an album."""
         album_id = self._extract_id_from_uri(album_uri)
-        results = self._sp.album_tracks(album_id)
+        results = self.sp.album_tracks(album_id)
 
         tracks = []
         while results:
@@ -137,7 +137,7 @@ class Client:
 
             # Get next page of results if available
             if results['next']:
-                results = self._sp.next(results)
+                results = self.sp.next(results)
             else:
                 results = None
 
@@ -148,12 +148,12 @@ class Client:
         artist_id = self._extract_id_from_uri(artist_uri)
         # Get market from user's account or default to US
         try:
-            user_info = self._sp.current_user()
+            user_info = self.sp.current_user()
             market = user_info['country']
         except:
             market = 'US'
 
-        results = self._sp.artist_top_tracks(artist_id, country=market)
+        results = self.sp.artist_top_tracks(artist_id, country=market)
 
         tracks = []
         for track in results['tracks']:
@@ -174,14 +174,14 @@ class Client:
         # The Spotify API endpoint expects a device_id parameter, but it's optional
         # if the user has an active device
         try:
-            self._sp.add_to_queue(spotify_uri)
+            self.sp.add_to_queue(spotify_uri)
             return True
         except Exception as e:
             # If no active device is found, try to get one and retry
-            devices = self._sp.devices()
+            devices = self.sp.devices()
             if devices and len(devices['devices']) > 0:
                 device_id = devices['devices'][0]['id']
-                self._sp.add_to_queue(spotify_uri, device_id=device_id)
+                self.sp.add_to_queue(spotify_uri, device_id=device_id)
                 return True
             else:
                 raise Exception("No active Spotify device found. Please open Spotify on a device first.")
@@ -189,7 +189,7 @@ class Client:
     def get_queue(self):
         """Gets the current user's queue."""
         try:
-            queue = self._sp.queue()
+            queue = self.sp.queue()
             return queue
         except Exception as e:
             raise Exception(f"Could not retrieve queue: {str(e)}")
@@ -199,7 +199,7 @@ class Client:
         item_id = self._extract_id_from_uri(item_uri)
 
         if 'track' in item_uri:
-            item = self._sp.track(item_id)
+            item = self.sp.track(item_id)
             info = {
                 'type': 'track',
                 'name': item['name'],
@@ -211,7 +211,7 @@ class Client:
                 'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
             }
         elif 'playlist' in item_uri:
-            item = self._sp.playlist(item_id)
+            item = self.sp.playlist(item_id)
             info = {
                 'type': 'playlist',
                 'name': item['name'],
@@ -223,7 +223,7 @@ class Client:
                 'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
             }
         elif 'album' in item_uri:
-            item = self._sp.album(item_id)
+            item = self.sp.album(item_id)
             info = {
                 'type': 'album',
                 'name': item['name'],
@@ -235,7 +235,7 @@ class Client:
                 'external_url': item['external_urls']['spotify'] if 'external_urls' in item else None
             }
         elif 'artist' in item_uri:
-            item = self._sp.artist(item_id)
+            item = self.sp.artist(item_id)
             info = {
                 'type': 'artist',
                 'name': item['name'],
