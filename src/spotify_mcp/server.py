@@ -141,6 +141,7 @@ def create_error_response(message):
 
 def format_playback_response(spotify_uri: str) -> str:
     curr_info = spotify_client.get_info(item_uri=spotify_uri)
+    logger.info(curr_info)
     uri_parts = spotify_uri.split(":")
     uri_type = uri_parts[1] if len(uri_parts) == 3 else "unknown"
     if uri_type == "track":
