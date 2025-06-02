@@ -15,7 +15,8 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
     that includes only minimal info required for parse_track/parse_playlist.
     Supports 'track' and 'playlist' qtypes.
     """
-    items = []
+    track_items = []
+    playlist_items=[]
 
     for doc in documents:
         metadata = doc.get("metadata", {})
@@ -27,20 +28,21 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
             continue
 
         if qtype == "track":
-            item = {
+            track_items.append({
                 "name": metadata.get("title", "Unknown Track"),
                 "uri": uri,
                 "id ": uri.split(":")[-1],
                 "external_urls": {"spotify": metadata.get("url", "")},
                 "artists": [{"name": metadata.get("artist", "Unknown Artist")}],
                 "album": {"name": metadata.get("album", "Unknown Album")}
-            }
+            })
         elif qtype == "playlist":
             owner = metadata.get("owner", {})
-            item = {
+            playlist_items.append({
                 "name": metadata.get("title", "Untitled Playlist"),
                 "description": metadata.get("description", ""),
                 "uri": uri,
+                "id ": uri.split(":")[-1],
                 "external_urls": {"spotify": metadata.get("url", "")},
                 "owner": {
                     "id": owner.get("id", ""),
@@ -50,18 +52,10 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
                 "tracks": {
                     "total": metadata.get("trackCount", 0)
                 }
-            }
+            })
         else:
             continue
-
-        items.append(item)
-
-    return {
-        f"{qtype}s": {
-            "items": items,
-            "total": len(items)
-        }
-    }
+    return {"tracks":track_items,"playlists":playlist_items}
 
 def normalize_redirect_uri(url: str) -> str:
     if not url:

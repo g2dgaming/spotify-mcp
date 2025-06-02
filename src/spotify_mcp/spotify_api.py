@@ -57,7 +57,7 @@ class Client:
             if local_results:
                 if 'tracks' in local_results:
                     local_results['tracks']['items'] = [
-                        utils.parse_track(t, False) for t in local_results['tracks']['items'][:limit]
+                        utils.parse_track(t) for t in local_results['tracks']['items'][:limit]
                     ]
                     local_results['tracks']['total'] = len(local_results['tracks']['items'])
 
