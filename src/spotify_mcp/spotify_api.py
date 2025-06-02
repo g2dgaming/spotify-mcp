@@ -36,9 +36,6 @@ class Client:
         query: str,
         qtype: str = 'track',
         limit: int = 10,
-        device=None,
-        username: Optional[str] = None,
-        detailed: bool = False,
     ) -> dict:
         try:
             local_resp = requests.get(
@@ -59,7 +56,7 @@ class Client:
                 if local_results:
                     if 'tracks' in local_results:
                         local_results['tracks']['items'] = [
-                            self.parse_track(t, detailed) for t in local_results['tracks']['items'][:limit]
+                            self.parse_track(t, False) for t in local_results['tracks']['items'][:limit]
                         ]
                         local_results['tracks']['total'] = len(local_results['tracks']['items'])
 
@@ -72,8 +69,8 @@ class Client:
                     return local_results
 
         self.logger.info("Falling back to online Spotify search")
-        online_results = utils.search_online(query, qtype, username, detailed)
-        parsed_results = utils.parse_search_results(online_results, qtype, username)
+        online_results = self.sp.search(query, qtype, self.username, detailed=False)
+        parsed_results = utils.parse_search_results(online_results, qtype, self.username)
         return parsed_results
 
     def __init__(self, logger: logging.Logger):
@@ -318,18 +315,17 @@ class Client:
     @utils.validate
     def search(self, query: str, qtype: str = 'track', limit=10, device=None):
         """
-        Searches based of query term.
+        Searches based on query term.
         - query: query term
         - qtype: the types of items to return. One or more of 'artist', 'album',  'track', 'playlist'.
-                 If multiple types are desired, pass in a comma separated string; e.g. 'track,album'
+                If multiple types are desired, pass in a comma separated string; e.g. 'track,album'
         - limit: max # items to return
         """
         if self.username is None:
             self.set_username()
-        results = self.sp.search(q=query, limit=limit, type=qtype,market="IN")
-        if not results:
-            raise ValueError("No search results found.")
-        return utils.parse_search_results(results, qtype, self.username)
+        results = self.smart_search(query=query, qtype=qtype,limit=limit)
+        return results
+
 
     def recommendations(self, artists: Optional[List] = None, tracks: Optional[List] = None, limit=20):
         # doesnt work
