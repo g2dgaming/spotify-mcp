@@ -46,32 +46,27 @@ class Client:
                 timeout=5
             )
             local_resp.raise_for_status()
-            local_data = local_resp.json()
-            documents = local_data.get("documents", [])
-            self.logger.info(f"Docuemnts2 : {documents}")
+            local_data = local_resp.json().get("documents", [])
         except RequestException as e:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
 
         if local_data and isinstance(local_data, list) and len(local_data) > 0:
-            documents = local_data.get("documents", [])
-            if documents:
-                self.logger.info(f"Docuemnts : {documents}")
-                local_results = utils.parse_local_documents(documents, qtype)
-                if local_results:
-                    if 'tracks' in local_results:
-                        local_results['tracks']['items'] = [
-                            self.parse_track(t, False) for t in local_results['tracks']['items'][:limit]
-                        ]
-                        local_results['tracks']['total'] = len(local_results['tracks']['items'])
+            local_results = utils.parse_local_documents(local_data, qtype)
+            if local_results:
+                if 'tracks' in local_results:
+                    local_results['tracks']['items'] = [
+                        self.parse_track(t, False) for t in local_results['tracks']['items'][:limit]
+                    ]
+                    local_results['tracks']['total'] = len(local_results['tracks']['items'])
 
-                    elif 'playlists' in local_results:
-                        local_results['playlists']['items'] = [
-                            self.parse_playlist(p) for p in local_results['playlists']['items'][:limit]
-                        ]
-                        local_results['playlists']['total'] = len(local_results['playlists']['items'])
+                elif 'playlists' in local_results:
+                    local_results['playlists']['items'] = [
+                        self.parse_playlist(p) for p in local_results['playlists']['items'][:limit]
+                    ]
+                    local_results['playlists']['total'] = len(local_results['playlists']['items'])
 
-                    return local_results
+                return local_results
 
         self.logger.info("Falling back to online Spotify search")
         online_results = self.sp.search(q=query, type=qtype, limit=limit,market=SPOTIFY_COUNTRY)
