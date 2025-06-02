@@ -52,7 +52,7 @@ class Client:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
 
-        if local_data and isinstance(local_data, list) and len(local_data) > 0:
+        if local_data and isinstance(local_data, list) and len(local_data) > 0 and (qtype == "track" or qtype == "playlist"):
             self.logger.info("Loading local results")
             local_results = utils.parse_local_documents(local_data, qtype)
             return local_results
