@@ -47,6 +47,8 @@ class Client:
             )
             local_resp.raise_for_status()
             local_data = local_resp.json()
+            documents = local_data.get("documents", [])
+            self.logger.log(f"Docuemnts2 : {documents}")
         except RequestException as e:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
