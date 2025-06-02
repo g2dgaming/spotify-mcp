@@ -9,6 +9,58 @@ from requests import RequestException
 
 T = TypeVar('T')
 
+def parse_local_documents(documents: list, qtype: str) -> dict:
+    """
+    Converts local search documents into a mock Spotify API-like format
+    that includes only minimal info required for parse_track/parse_playlist.
+    Supports 'track' and 'playlist' qtypes.
+    """
+    items = []
+
+    for doc in documents:
+        metadata = doc.get("document", {}).get("metadata", {})
+        doc_type = metadata.get("type", "")
+        uri = metadata.get("uri", "")
+
+        # Skip if type mismatches or uri is missing
+        if doc_type != qtype or not uri:
+            continue
+
+        if qtype == "track":
+            item = {
+                "name": metadata.get("title", "Unknown Track"),
+                "uri": uri,
+                "external_urls": {"spotify": metadata.get("url", "")},
+                "artists": [{"name": metadata.get("artist", "Unknown Artist")}],
+                "album": {"name": metadata.get("album", "Unknown Album")}
+            }
+        elif qtype == "playlist":
+            owner = metadata.get("owner", {})
+            item = {
+                "name": metadata.get("title", "Untitled Playlist"),
+                "description": metadata.get("description", ""),
+                "uri": uri,
+                "external_urls": {"spotify": metadata.get("url", "")},
+                "owner": {
+                    "id": owner.get("id", ""),
+                    "display_name": owner.get("name", ""),
+                    "external_urls": {"spotify": owner.get("url", "")}
+                },
+                "tracks": {
+                    "total": metadata.get("trackCount", 0)
+                }
+            }
+        else:
+            continue
+
+        items.append(item)
+
+    return {
+        f"{qtype}s": {
+            "items": items,
+            "total": len(items)
+        }
+    }
 
 def normalize_redirect_uri(url: str) -> str:
     if not url:

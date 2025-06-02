@@ -6,14 +6,16 @@ import spotipy
 from dotenv import load_dotenv
 from spotipy.cache_handler import CacheFileHandler
 from spotipy.oauth2 import SpotifyOAuth
-
+import requests
 from . import utils
+from requests import RequestException
 
 load_dotenv()
 
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
+LOCAL_SEARCH_URL = os.getenv("LOCAL_SEARCH_URL")
 
 # Normalize the redirect URI to meet Spotify's requirements
 if REDIRECT_URI:
@@ -29,6 +31,51 @@ SCOPES = ["user-read-currently-playing", "user-read-playback-state", "user-read-
 
 
 class Client:
+    def smart_search(
+        self,
+        query: str,
+        qtype: str = 'track',
+        limit: int = 10,
+        device=None,
+        username: Optional[str] = None,
+        detailed: bool = False,
+    ) -> dict:
+        try:
+            local_resp = requests.get(
+                LOCAL_SEARCH_URL,
+                params={'q': query, 'type': qtype},
+                timeout=5
+            )
+            local_resp.raise_for_status()
+            local_data = local_resp.json()
+        except RequestException as e:
+            self.logger.info(f"[local search failed] {e}")
+            local_data = None
+
+        if local_data and isinstance(local_data, list) and len(local_data) > 0:
+            documents = local_data[0].get("documents", [])
+            if documents:
+                local_results = utils.parse_local_documents(documents, qtype)
+                if local_results:
+                    if 'tracks' in local_results:
+                        local_results['tracks']['items'] = [
+                            self.parse_track(t, detailed) for t in local_results['tracks']['items'][:limit]
+                        ]
+                        local_results['tracks']['total'] = len(local_results['tracks']['items'])
+
+                    elif 'playlists' in local_results:
+                        local_results['playlists']['items'] = [
+                            self.parse_playlist(p) for p in local_results['playlists']['items'][:limit]
+                        ]
+                        local_results['playlists']['total'] = len(local_results['playlists']['items'])
+
+                    return local_results
+
+        self.logger.info("Falling back to online Spotify search")
+        online_results = utils.search_online(query, qtype, username, detailed)
+        parsed_results = utils.parse_search_results(online_results, qtype, username)
+        return parsed_results
+
     def __init__(self, logger: logging.Logger):
         """Initialize Spotify client with necessary permissions"""
         self.logger = logger
