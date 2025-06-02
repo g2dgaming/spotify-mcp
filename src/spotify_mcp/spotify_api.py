@@ -48,7 +48,7 @@ class Client:
             local_resp.raise_for_status()
             local_data = local_resp.json()
             documents = local_data.get("documents", [])
-            self.logger.log(f"Docuemnts2 : {documents}")
+            self.logger.info(f"Docuemnts2 : {documents}")
         except RequestException as e:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
@@ -56,7 +56,7 @@ class Client:
         if local_data and isinstance(local_data, list) and len(local_data) > 0:
             documents = local_data.get("documents", [])
             if documents:
-                self.logger.log(f"Docuemnts : {documents}")
+                self.logger.info(f"Docuemnts : {documents}")
                 local_results = utils.parse_local_documents(documents, qtype)
                 if local_results:
                     if 'tracks' in local_results:
