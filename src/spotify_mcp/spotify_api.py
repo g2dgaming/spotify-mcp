@@ -69,7 +69,7 @@ class Client:
                     return local_results
 
         self.logger.info("Falling back to online Spotify search")
-        online_results = self.sp.search(query, qtype, self.username)
+        online_results = self.sp.search(query, qtype, limit)
         parsed_results = utils.parse_search_results(online_results, qtype, self.username)
         return parsed_results
 
