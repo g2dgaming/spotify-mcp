@@ -30,6 +30,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
             item = {
                 "name": metadata.get("title", "Unknown Track"),
                 "uri": uri,
+                "id ": uri.split(":")[-1],
                 "external_urls": {"spotify": metadata.get("url", "")},
                 "artists": [{"name": metadata.get("artist", "Unknown Artist")}],
                 "album": {"name": metadata.get("album", "Unknown Album")}
