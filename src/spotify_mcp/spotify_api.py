@@ -51,7 +51,7 @@ class Client:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
 
-        if local_data and isinstance(local_data, list) and len(local_data) > 0:
+        if local_data and isinstance(local_data, list) and len(local_data) ==  0:
             local_results = utils.parse_local_documents(local_data, qtype)
             if local_results:
                 if 'tracks' in local_results:
