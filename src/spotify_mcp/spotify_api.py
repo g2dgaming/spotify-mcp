@@ -55,6 +55,7 @@ class Client:
         if local_data and isinstance(local_data, list) and len(local_data) > 0 and (qtype == "track" or qtype == "playlist"):
             self.logger.info("Loading local results")
             local_results = utils.parse_local_documents(local_data, qtype)
+            self.logger.info("Local Results",local_results)
             return local_results
 
         self.logger.info("Falling back to online Spotify search")
