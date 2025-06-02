@@ -52,22 +52,9 @@ class Client:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
 
-        if local_data and isinstance(local_data, list) and len(local_data) ==  0:
+        if local_data and isinstance(local_data, list) and len(local_data) > 0:
             local_results = utils.parse_local_documents(local_data, qtype)
-            if local_results:
-                if 'tracks' in local_results:
-                    local_results['tracks']['items'] = [
-                        utils.parse_track(t) for t in local_results['tracks']['items'][:limit]
-                    ]
-                    local_results['tracks']['total'] = len(local_results['tracks']['items'])
-
-                elif 'playlists' in local_results:
-                    local_results['playlists']['items'] = [
-                        utils.parse_playlist(p) for p in local_results['playlists']['items'][:limit]
-                    ]
-                    local_results['playlists']['total'] = len(local_results['playlists']['items'])
-
-                return local_results
+            return local_results
 
         self.logger.info("Falling back to online Spotify search")
         online_results = self.sp.search(q=query, type=qtype, limit=limit,market=SPOTIFY_COUNTRY)

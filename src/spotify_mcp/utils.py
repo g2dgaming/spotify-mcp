@@ -15,8 +15,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
     that includes only minimal info required for parse_track/parse_playlist.
     Supports 'track' and 'playlist' qtypes.
     """
-    track_items = []
-    playlist_items=[]
+    _results = defaultdict(list)
 
     for doc in documents:
         metadata = doc.get("metadata", {})
@@ -28,7 +27,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
             continue
 
         if qtype == "track":
-            track_items.append({
+            _results['tracks'].append({
                 "name": metadata.get("title", "Unknown Track"),
                 "uri": uri,
                 "id ": uri.split(":")[-1],
@@ -38,7 +37,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
             })
         elif qtype == "playlist":
             owner = metadata.get("owner", {})
-            playlist_items.append({
+            _results["playlists"].append({
                 "name": metadata.get("title", "Untitled Playlist"),
                 "description": metadata.get("description", ""),
                 "uri": uri,
@@ -55,7 +54,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
             })
         else:
             continue
-    return {"tracks":track_items,"playlists":playlist_items}
+    return dict(_results)
 
 def normalize_redirect_uri(url: str) -> str:
     if not url:
