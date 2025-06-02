@@ -16,6 +16,8 @@ CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 LOCAL_SEARCH_URL = os.getenv("LOCAL_SEARCH_URL")
+SPOTIFY_COUNTRY = os.getenv("SPOTIFY_COUNTRY")
+
 
 # Normalize the redirect URI to meet Spotify's requirements
 if REDIRECT_URI:
@@ -69,7 +71,7 @@ class Client:
                     return local_results
 
         self.logger.info("Falling back to online Spotify search")
-        online_results = self.sp.search(q=query, qtype=qtype, limit=limit)
+        online_results = self.sp.search(q=query, type=qtype, limit=limit,market=SPOTIFY_COUNTRY)
         parsed_results = utils.parse_search_results(online_results, qtype, self.username)
         return parsed_results
 
