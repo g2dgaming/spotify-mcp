@@ -18,7 +18,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
     items = []
 
     for doc in documents:
-        metadata = doc.get("document", {}).get("metadata", {})
+        metadata = doc.get("metadata", {})
         doc_type = metadata.get("type", "")
         uri = metadata.get("uri", "")
 

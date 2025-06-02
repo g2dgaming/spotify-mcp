@@ -46,7 +46,6 @@ class Client:
                 timeout=5
             )
             local_resp.raise_for_status()
-            self.logger.info(f"Results: {local_resp.json()}")
             local_data = local_resp.json()
         except RequestException as e:
             self.logger.info(f"[local search failed] {e}")
@@ -55,6 +54,7 @@ class Client:
         if local_data and isinstance(local_data, list) and len(local_data) > 0:
             documents = local_data.get("documents", [])
             if documents:
+                self.logger.log(f"Docuemnts : {documents}")
                 local_results = utils.parse_local_documents(documents, qtype)
                 if local_results:
                     if 'tracks' in local_results:
