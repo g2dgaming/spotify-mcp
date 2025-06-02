@@ -22,10 +22,6 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
         doc_type = metadata.get("type", "")
         uri = metadata.get("uri", "")
 
-        # Skip if type mismatches or uri is missing
-        if doc_type != qtype or not uri:
-            continue
-
         if qtype == "track":
             _results['tracks'].append({
                 "name": metadata.get("title", "Unknown Track"),
