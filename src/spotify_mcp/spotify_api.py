@@ -61,7 +61,10 @@ class Client:
             local_results = utils.parse_local_documents(local_data, qtype)
             if local_results:
                 for key in local_results:
-                    parsed_results[key].extend(local_results[key])
+                    all_items = local_results[key] + parsed_results.get(key, [])
+                    # Remove duplicates using dict keyed by 'id'
+                    deduped = {item['id']: item for item in all_items if 'id' in item}
+                    parsed_results[key] = list(deduped.values())
 
         return parsed_results
 
