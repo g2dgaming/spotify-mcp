@@ -56,13 +56,13 @@ class Client:
             if local_results:
                 if 'tracks' in local_results:
                     local_results['tracks']['items'] = [
-                        self.parse_track(t, False) for t in local_results['tracks']['items'][:limit]
+                        utils.parse_track(t, False) for t in local_results['tracks']['items'][:limit]
                     ]
                     local_results['tracks']['total'] = len(local_results['tracks']['items'])
 
                 elif 'playlists' in local_results:
                     local_results['playlists']['items'] = [
-                        self.parse_playlist(p) for p in local_results['playlists']['items'][:limit]
+                        utils.parse_playlist(p) for p in local_results['playlists']['items'][:limit]
                     ]
                     local_results['playlists']['total'] = len(local_results['playlists']['items'])
 
