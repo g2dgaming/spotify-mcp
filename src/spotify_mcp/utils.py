@@ -30,7 +30,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
             _results['tracks'].append({
                 "name": metadata.get("title", "Unknown Track"),
                 "uri": uri,
-                "id ": uri.split(":")[-1],
+                "id": uri.split(":")[-1],
                 "artists":metadata.get("artists",[]),
                 "album": {"name": metadata.get("album", "Unknown Album")}
             })
@@ -40,7 +40,7 @@ def parse_local_documents(documents: list, qtype: str) -> dict:
                 "name": metadata.get("title", "Untitled Playlist"),
                 "description": metadata.get("description", ""),
                 "uri": uri,
-                "id ": uri.split(":")[-1],
+                "id": uri.split(":")[-1],
                 "external_urls": {"spotify": metadata.get("url", "")},
                 "owner": {
                     "id": owner.get("id", ""),

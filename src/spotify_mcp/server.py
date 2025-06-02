@@ -266,7 +266,6 @@ async def handle_call_tool(
                     for idx, item in enumerate(result_items, start=1):
                         if qtype == "track":
                             title = item.get("name", "Unknown Title")
-                            logger.info(f"Name {item.get("name")} id {item.get('id')} item {item}")
                             uri = f"spotify:track:{item.get('id', 'N/A')}"
                             formatted_results.append(f"{idx}. \"{title}\" by {get_artist_string(item)}\n   URI: {uri}")
 
