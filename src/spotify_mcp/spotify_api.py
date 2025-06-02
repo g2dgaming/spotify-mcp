@@ -52,14 +52,17 @@ class Client:
             self.logger.info(f"[local search failed] {e}")
             local_data = None
 
+        self.logger.info("Falling back to online Spotify search")        
+        online_results = self.sp.search(q=query, type=qtype, limit=limit,market=SPOTIFY_COUNTRY)
+        parsed_results = utils.parse_search_results(online_results, qtype, self.username)
+
         if local_data and isinstance(local_data, list) and len(local_data) > 0 and (qtype == "track" or qtype == "playlist"):
             self.logger.info("Loading local results")
             local_results = utils.parse_local_documents(local_data, qtype)
-            return local_results
+            if local_results:
+                for key in local_results:
+                    parsed_results[key].extend(local_results[key])
 
-        self.logger.info("Falling back to online Spotify search")
-        online_results = self.sp.search(q=query, type=qtype, limit=limit,market=SPOTIFY_COUNTRY)
-        parsed_results = utils.parse_search_results(online_results, qtype, self.username)
         return parsed_results
 
     def __init__(self, logger: logging.Logger):
